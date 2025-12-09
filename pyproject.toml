@@ -1,0 +1,9 @@
+[tool.basedpyright]
+extraPaths = [
+    "/nix/store/62fdlzq1x1ak2lsxp4ij7ip5k9nia3hc-python3-3.13.7/lib/python3.13/site-packages",
+    "/nix/store/0hzn0jqapgyx88s7whnai42cjpjhg7pq-python3-3.13.7-env/lib/python3.13/site-packages"
+]
+
+# python3 - << EOF
+# import sys; print("\n".join(sys.path))
+# EOF
