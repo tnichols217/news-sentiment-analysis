@@ -2,12 +2,11 @@
 
 import csv
 import json
-from collections.abc import Generator
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, cast
 
-from transformers import TextClassificationPipeline
+from transformers import PreTrainedTokenizer, TextClassificationPipeline
 
 from .mediacloud import ArticleType
 
@@ -25,32 +24,37 @@ def init_worker() -> None:
     subjectivity = pipeline(
         "text-classification",
         model="GroNLP/mdebertav3-subjectivity-multilingual",
-        device_map="auto",
+        device="cuda:0",
     )
 
     sentiment = pipeline(
         "text-classification",
         model="distilbert/distilbert-base-uncased-finetuned-sst-2-english",
-        device_map="auto",
+        device="cuda:1",
     )
 
     print("Models loaded")
 
 
-def chunk_text(text: str, max_tokens: int = 200) -> Generator[str, None, None]:
+def chunk_text(
+    text: str, tokenizer: PreTrainedTokenizer, max_tokens: int = 200
+) -> list[str]:
     """Chunks text to smaller pieces due to token limits
 
     Args:
         text: The text to be chunked
+        tokenizer: The tokenizer to use to chunk by
         max_tokens: The number of tokens to chunk to
 
-    Yields:
+    Returns:
         Chunks of text at specified size
 
     """
-    words = text.split()
-    for i in range(0, len(words), max_tokens):
-        yield " ".join(words[i : i + max_tokens])
+    tokens = tokenizer.encode(text, add_special_tokens=False)  # pyright: ignore[reportUnknownMemberType]
+    return [
+        tokenizer.decode(tokens[i : i + max_tokens], skip_special_tokens=True).strip()  # pyright: ignore[reportUnknownMemberType]
+        for i in range(0, len(tokens), max_tokens)
+    ]
 
 
 def get_sub_sen(text: str) -> tuple[float, float]:
@@ -64,12 +68,12 @@ def get_sub_sen(text: str) -> tuple[float, float]:
 
     """
     import statistics  # noqa: PLC0415
-    chunks = list(chunk_text(text))
+
     if subjectivity is None or sentiment is None:
         print("Worker not initialized!")
         return (0.0, 0.0)
-    subj_list = subjectivity(chunks, batch_size=8)
-    sent_list = sentiment(chunks, batch_size=8)
+    subj_list = subjectivity(chunk_text(text, subjectivity.tokenizer), batch_size=8)  # pyright: ignore[reportArgumentType]
+    sent_list = sentiment(chunk_text(text, sentiment.tokenizer), batch_size=8)  # pyright: ignore[reportArgumentType]
     subj_mapped = [
         float((1 if subj["label"] == "LABEL_1" else -1) * subj["score"])  # pyright: ignore[reportAny]
         for subj in subj_list
@@ -95,13 +99,17 @@ def process_file(fp: Path) -> list[Any] | None:  # pyright: ignore[reportExplici
         The list of items to put into the CSV
 
     """
-    with fp.open("r", encoding="utf-8") as f:
-        article = cast(ArticleType, json.load(f))
+    try:
+        with fp.open("r", encoding="utf-8") as f:
+            article = cast(ArticleType, json.load(f))
+    except:  # noqa: E722
+        print(f"Failed to read file {fp!s}")
+        return None
 
     if not article.get("text"):
         return None
 
-    print(f"Processing: {article["title"]}")
+    print(f"Processing: {article['title']}")
 
     sub, sen = get_sub_sen(article["text"])
 
