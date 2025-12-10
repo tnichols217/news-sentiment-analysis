@@ -17,7 +17,7 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
 
         python = pkgs.python3.withPackages (
           ps: with ps; [
@@ -29,6 +29,14 @@
             pandas-stubs
             beautifulsoup4
             python-dotenv
+            newspaper3k
+            cssselect
+            torchWithCuda
+            (transformers.override { torch = torchWithCuda; })
+            (accelerate.override { torch = torchWithCuda; })
+            (torchvision.override { torch = torchWithCuda; })
+            (torchaudio.override { torch = torchWithCuda; })
+            sentencepiece
             (ps.buildPythonPackage rec {
               pname = "matplotlib_stubs";
               version = "0.3.11";

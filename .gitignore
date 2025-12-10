@@ -177,9 +177,12 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-data
+data*
+articles*
+output*
 plots
 .direnv
 *.jsp
 result
 *.json
+*.csv
