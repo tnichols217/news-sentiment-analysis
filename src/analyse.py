@@ -25,11 +25,13 @@ def init_worker() -> None:
     subjectivity = pipeline(
         "text-classification",
         model="GroNLP/mdebertav3-subjectivity-multilingual",
+        device_map="auto",
     )
 
     sentiment = pipeline(
         "text-classification",
         model="distilbert/distilbert-base-uncased-finetuned-sst-2-english",
+        device_map="auto",
     )
 
     print("Models loaded")
@@ -114,7 +116,7 @@ def process_file(fp: Path) -> list[Any] | None:  # pyright: ignore[reportExplici
     ]
 
 
-def analyse_dir(input_dir: Path, output_file: Path, workers: int = 4) -> None:
+def analyse_dir(input_dir: Path, output_file: Path, workers: int = 2) -> None:
     """Analyses a directory of articles
 
     Args:
