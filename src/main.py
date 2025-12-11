@@ -2,9 +2,8 @@
 
 from pathlib import Path
 
-from src.article import get_all_articles
-
 from .analyse import analyse_dir
+from .article import get_all_articles
 from .envmanager import getenv
 from .mediacloud import get_all_stories
 

@@ -17,7 +17,10 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
 
         python = pkgs.python3.withPackages (
           ps: with ps; [
@@ -61,7 +64,7 @@
               pname = "mediacloud";
               version = "4.5.0";
 
-              pyproject = true;  # because you use flit_core build-backend
+              pyproject = true; # because you use flit_core build-backend
 
               src = pkgs.fetchPypi {
                 inherit pname version;
@@ -102,7 +105,7 @@
                 description = "Media Cloud API Client Library";
                 homepage = "https://mediacloud.org";
                 license = licenses.asl20;
-                maintainers = [];
+                maintainers = [ ];
               };
             })
           ]
@@ -121,21 +124,24 @@
 
         devShells = {
           default = pkgs.mkShell {
-            packages = with pkgs; [
-              ruff
-              nil
-              nixd
-              nixfmt
-              basedpyright
-            ] ++ [
-              python
-            ];
+            packages =
+              with pkgs;
+              [
+                ruff
+                nil
+                nixd
+                nixfmt
+                basedpyright
+              ]
+              ++ [
+                python
+              ];
           };
         };
 
         packages = rec {
           default = plots;
-          qol = pkgs.callPackage ./nix/qol_src.nix {};
+          qol = pkgs.callPackage ./nix/qol_src.nix { };
           plots = pkgs.callPackage ./nix/build.nix { inherit qol; };
         };
       }
